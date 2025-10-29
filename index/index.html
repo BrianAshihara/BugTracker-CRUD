@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugTrack — Demo CRUD</title>
+  <style>
+    body {
+      background-color: #1e293b;
+      color: #e2e8f0;
+      font-family: "Inter", sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 80%;
+      max-width: 900px;
+      background-color: #111827;
+      padding: 30px;
+      border-radius: 12px;
+      margin: 40px 0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      font-size: 26px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: #fff;
+      margin-top: 30px;
+      border-bottom: 2px solid #3b82f6;
+      padding-bottom: 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      background-color: #1e293b;
+      color: #f1f5f9;
+      font-size: 15px;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    button {
+      background-color: #3b82f6;
+      border: none;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+    }
+
+    .form-inline {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .form-inline input {
+      flex: 8; /* caixa maior */
+      padding: 12px;
+      font-size: 15px;
+      border: 1px solid #374151;
+      background-color: #1e293b;
+      color: #f1f5f9;
+      border-radius: 6px;
+    }
+
+    .form-inline input::placeholder {
+      color: #94a3b8;
+    }
+
+    .form-inline button {
+      flex: 2; /* botão menor */
+      padding: 12px;
+      font-size: 15px;
+      background-color: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .form-inline button:hover {
+      background-color: #2563eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #1f2937;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border-bottom: 1px solid #374151;
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #111827;
+      color: #60a5fa;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background-color: #273549;
+    }
+
+    .actions button {
+      margin-right: 5px;
+      padding: 6px 10px;
+      font-size: 14px;
+    }
+
+    .edit {
+      background-color: #2563eb;
+    }
+
+    .delete {
+      background-color: #dc2626;
+    }
+
+    .delete:hover {
+      background-color: #b91c1c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐞 BugTrack — Demo CRUD</h1>
+
+    <h2>Novo Bug</h2>
+    <form id="bugForm">
+      <input type="hidden" id="bugId">
+      <input type="text" id="titulo" placeholder="Título" required>
+      <textarea id="descricao" placeholder="Descrição" required></textarea>
+      <input type="text" id="projeto" placeholder="Projeto (opcional)">
+      <select id="prioridade" required>
+        <option value="Baixa">Baixa</option>
+        <option value="Média">Média</option>
+        <option value="Alta">Alta</option>
+      </select>
+      <input type="text" id="responsavel" placeholder="Responsável (opcional)">
+      <button type="submit">Criar bug</button>
+    </form>
+
+    <h2>Lista de bugs</h2>
+    <div class="form-inline">
+      <input type="text" id="search" placeholder="Buscar por título/descrição">
+      <button onclick="fetchBugs()">Buscar</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Título</th>
+          <th>Projeto</th>
+          <th>Prioridade</th>
+          <th>Status</th>
+          <th>Responsável</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="bugTable"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = '/api/bugs';
+    const form = document.getElementById('bugForm');
+    const bugTable = document.getElementById('bugTable');
+    const searchInput = document.getElementById('search');
+
+    async function fetchBugs() {
+      const query = searchInput.value.trim();
+      const url = query ? `${API_URL}?q=${query}` : API_URL;
+      const res = await fetch(url);
+      const bugs = await res.json();
+      bugTable.innerHTML = '';
+
+      bugs.forEach(bug => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${bug.id}</td>
+          <td>${bug.titulo}</td>
+          <td>${bug.projeto || '-'}</td>
+          <td>${bug.prioridade}</td>
+          <td>${bug.status}</td>
+          <td>${bug.responsavel || '-'}</td>
+          <td class="actions">
+            <button class="edit" onclick="editBug(${bug.id})">Editar</button>
+            <button class="delete" onclick="deleteBug(${bug.id})">Excluir</button>
+          </td>
+        `;
+        bugTable.appendChild(row);
+      });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('bugId').value;
+      const data = {
+        titulo: document.getElementById('titulo').value,
+        descricao: document.getElementById('descricao').value,
+        projeto: document.getElementById('projeto').value,
+        prioridade: document.getElementById('prioridade').value,
+        responsavel: document.getElementById('responsavel').value,
+        status: id ? document.getElementById('status')?.value || "Aberto" : "Aberto"
+      };
+
+      if (id) {
+        await fetch(`${API_URL}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+      } else {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+      }
+
+      form.reset();
+      document.getElementById('bugId').value = '';
+      fetchBugs();
+    });
+
+    async function deleteBug(id) {
+      if (confirm('Deseja realmente excluir este bug?')) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        fetchBugs();
+      }
+    }
+
+    async function editBug(id) {
+      const res = await fetch(`${API_URL}/${id}`);
+      const bug = await res.json();
+      document.getElementById('bugId').value = bug.id;
+      document.getElementById('titulo').value = bug.titulo;
+      document.getElementById('descricao').value = bug.descricao;
+      document.getElementById('projeto').value = bug.projeto || '';
+      document.getElementById('prioridade').value = bug.prioridade;
+      document.getElementById('responsavel').value = bug.responsavel || '';
+
+      // Adiciona campo status apenas ao editar
+      if (!document.getElementById('status')) {
+        const statusSelect = document.createElement('select');
+        statusSelect.id = 'status';
+        statusSelect.innerHTML = `
+          <option value="Aberto" ${bug.status === "Aberto" ? "selected" : ""}>Aberto</option>
+          <option value="Em andamento" ${bug.status === "Em andamento" ? "selected" : ""}>Em andamento</option>
+          <option value="Resolvido" ${bug.status === "Resolvido" ? "selected" : ""}>Resolvido</option>
+        `;
+        form.insertBefore(statusSelect, document.getElementById('responsavel'));
+      } else {
+        document.getElementById('status').value = bug.status;
+      }
+    }
+
+    fetchBugs();
+  </script>
+</body>
+</html>
