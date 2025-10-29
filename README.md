@@ -47,5 +47,3 @@ O foco deste projeto é a **organização de código**, **boas práticas** e uma
 
 ---
 
-## 🧩 Estrutura de diretórios
-
