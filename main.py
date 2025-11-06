@@ -58,3 +58,7 @@ def seed_if_empty():
         db.close()
 
 seed_if_empty()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
